@@ -3,18 +3,20 @@ import Navbar from './components/Navbar'
 import { createBrowserRouter,RouterProvider } from 'react-router-dom'
 import './App.css'
 import Home from './pages/Home'
+import MentineTable from './components/MentineTable'
 
 
 
 
 function App() {
-
+  const [selectedConnection, setSelectedConnection] = useState('');
   
   return (
     <>
  <Navbar />
- <Home />
- 
+ <Home selectedConnection={selectedConnection} setSelectedConnection={setSelectedConnection}/>
+ <MentineTable/>
+
     </>
   )
 }

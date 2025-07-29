@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import Home from '../pages/Home';
 
-const leftbar = () => {
+const leftbar = ({ selectedConnection, setSelectedConnection }) => {
   const [sessionData, setSessionData] = useState([]);
   const [localData, setLocalData] = useState([])
   const [showData, setShowData] = useState('')
-  const [selectedConnection, setSelectedConnection] = useState('')
+
  
 
   const getAllSessionStorage=()=>{
@@ -42,7 +42,7 @@ const leftbar = () => {
   return (
     <div className='mr-10'>
       <div className='  mt-6 '>
-        <Home connection ={selectedConnection} setconnection ={setSelectedConnection}/>
+       
         <p
           className=' font-bold pb-4 text-2xl text-gray-600   '>Temprary Conn.</p>
 

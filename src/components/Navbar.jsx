@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import SaveInfo from '../service/saveInfo'
+import SaveInfo from '../service/SaveInfo'
 import { Cog } from 'lucide-react';
 import { Share2 } from 'lucide-react';
 import Users from '../service/users';
