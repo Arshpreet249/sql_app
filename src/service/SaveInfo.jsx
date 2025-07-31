@@ -13,8 +13,20 @@ const SaveInfo = ({ onclose }) => {
   const [publicKeyPem, setPublicKeyPem] = useState(null);
   const [selectDb, setSelectDb] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [server, setServer] = useState('');
+  const [database, setDatabase] = useState('')
   const infoRef = useRef();
 
+
+   useEffect(() => {
+    if (selectDb === 'mysql') {
+      setPort('3306');
+    } else if (selectDb === 'postgress') {
+      setPort('5432');
+    } else if (selectDb === 'mssql') {
+      setPort('');
+    }
+  }, [selectDb]);
   const fetchKey = async () => {
     try {
       const response = await fetch('http://192.168.1.200:7000/public-key');
@@ -140,11 +152,11 @@ const SaveInfo = ({ onclose }) => {
             required
           />
 
-          <div className="flex gap-5 mt-4">
+          <div className="flex justify-between mt-4 ">
             <div>
               <h1 className="text-lg">Username</h1>
               <input
-                className="border border-gray-400 outline-none p-1"
+                className="border border-gray-400 outline-none p-1 w-[100%]"
                 type="text"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
@@ -154,7 +166,7 @@ const SaveInfo = ({ onclose }) => {
             <div>
               <h1 className="text-lg">Password</h1>
               <input
-                className="border border-gray-400 outline-none p-1"
+                className="border border-gray-400 outline-none p-1 w-[100%] "
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -162,8 +174,32 @@ const SaveInfo = ({ onclose }) => {
               />
             </div>
           </div>
-
-          <div className="flex gap-5 mt-4">
+   {selectDb === 'mssql' && (
+            <div className="flex justify-between mt-4">
+            <div>
+              <h1 className="text-lg">Server</h1>
+              <input
+                className="border border-gray-400 outline-none p-1"
+                type="text"
+                value={server}
+                onChange={(e) => setServer(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <h1 className="text-lg">Database</h1>
+              <input
+                className="border border-gray-400 outline-none p-1"
+                type="database"
+                value={database}
+                onChange={(e) => setDatabase(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+            )}
+{selectDb !== 'mssql' && (
+          <div className="flex justify-between mt-4">
             <div>
               <h1 className="text-lg">Host</h1>
               <input
@@ -185,19 +221,21 @@ const SaveInfo = ({ onclose }) => {
               />
             </div>
           </div>
+          )}
 
           <div className="flex gap-3 mt-5">
             <button
               disabled={isLoading}
+              
               onClick={() => handleAdd('temprary')}
-              className={`border border-gray-300 text-gray-600 p-2 font-bold ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`border border-gray-300 cursor-pointer text-gray-600 p-2 font-bold ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isLoading ? 'Saving...' : 'Temporary Save'}
             </button>
             <button
               disabled={isLoading}
               onClick={() => handleAdd('permanent')}
-              className={`border border-gray-300 text-gray-600 p-2 font-bold ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`border border-gray-300 cursor-pointer text-gray-600 p-2 font-bold ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isLoading ? 'Saving...' : 'Permanent Save'}
             </button>

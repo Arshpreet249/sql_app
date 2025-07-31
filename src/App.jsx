@@ -3,19 +3,21 @@ import Navbar from './components/Navbar'
 import { createBrowserRouter,RouterProvider } from 'react-router-dom'
 import './App.css'
 import Home from './pages/Home'
-import MentineTable from './components/MentineTable'
-
 
 
 
 function App() {
-  const [selectedConnection, setSelectedConnection] = useState('');
+  const [selectedConnection, setSelectedConnection] = useState({});
+  const [activeSheet, setActiveSheet] = useState('Sheet 1');
+
   
   return (
     <>
- <Navbar />
- <Home selectedConnection={selectedConnection} setSelectedConnection={setSelectedConnection}/>
- <MentineTable/>
+ <Navbar
+ activeSheet={activeSheet}  setActiveSheet={setActiveSheet}
+  />
+ <Home selectedConnection={selectedConnection} setSelectedConnection={setSelectedConnection} activeSheet={activeSheet}
+  setActiveSheet={setActiveSheet}/>
 
     </>
   )

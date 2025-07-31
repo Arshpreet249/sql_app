@@ -39,6 +39,7 @@ const leftbar = ({ selectedConnection, setSelectedConnection }) => {
 
 
 
+
   return (
     <div className='mr-10'>
       <div className='  mt-6 '>
@@ -48,7 +49,7 @@ const leftbar = ({ selectedConnection, setSelectedConnection }) => {
 
      
           <div >
-            {Object.entries(sessionData).map(([key, value], index)=> (
+            {/* {Object.entries(sessionData).map(([key, value], index)=> (
               <p
               className={`border-l-8 cursor-pointer my-2 p-2 ${selectedConnection == key && 'bg-pink-500'}  border-l-purple-600 hover:bg-purple-600 transition-all duration-300 ease-in-out transform hover:scale-105`}
               onClick={()=>{setShowData(value); setSelectedConnection(key) }}
@@ -56,6 +57,22 @@ const leftbar = ({ selectedConnection, setSelectedConnection }) => {
                key={index}>{key}</p> 
                
               
+            ))} */}
+            {Object.entries(sessionData)
+              .filter(([key, _]) => !key.startsWith("Sheet")) // ✅ Only include keys starting with "Sheet"
+              .map(([key, value], index) => (
+                <p 
+                  className={`border-l-8 cursor-pointer my-2 p-2 ${
+                    selectedConnection === key && 'bg-pink-500'
+                  } border-l-purple-600 hover:bg-purple-600 transition-all duration-300 ease-in-out transform hover:scale-105`}
+                  onClick={() => {
+                    setShowData(value)
+                    setSelectedConnection(key)
+                  }}
+                  key={index}
+                >
+                  {key}
+                </p>
             ))}
           </div>
   
@@ -66,13 +83,30 @@ const leftbar = ({ selectedConnection, setSelectedConnection }) => {
           className='font-bold pb-4 text-2xl text-gray-600 '>Permanant Conn.</p>
 
           <div>
-            {Object.entries(localData).map(([key, value], index)=> (
+            {/* {Object.entries(localData).map(([key, value], index)=> (
+
               <p 
               className={`border-l-8 cursor-pointer my-2 p-2 ${selectedConnection == key && 'bg-pink-500'}  border-l-purple-600 hover:bg-purple-600 transition-all duration-300 ease-in-out transform hover:scale-105`}
               onClick={()=>{setShowData(value); setSelectedConnection(key) }}
              
               key={index}>{key}</p> 
               
+            ))} */}
+            {Object.entries(localData)
+              .filter(([key, _]) => !key.startsWith("Sheet")) // ✅ Only include keys starting with "Sheet"
+              .map(([key, value], index) => (
+                <p 
+                  className={`border-l-8 cursor-pointer my-2 p-2 ${
+                    selectedConnection === key && 'bg-pink-500'
+                  } border-l-purple-600 hover:bg-purple-600 transition-all duration-300 ease-in-out transform hover:scale-105`}
+                  onClick={() => {
+                    setShowData(value)
+                    setSelectedConnection(key)
+                  }}
+                  key={index}
+                >
+                  {key}
+                </p>
             ))}
           </div>
 
