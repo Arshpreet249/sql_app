@@ -13,10 +13,13 @@ import {
 } from 'mantine-react-table';
 import { Plus } from 'lucide-react'
 import ConsoleMessageBox from '../components/ConsoleMessageBox';
+import Rightbar from '../components/Rightbar';
 
 const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiveSheet }) => {
   const textareaRef = useRef(null);
   const tableRef = useRef(null);
+   const consoleRef = useRef(null);
+   const rightbarRef = useRef(null);
   const [textData, setTextData] = useState('');
   const [consoleMessages, setConsoleMessages] = useState([]);
   const [tableDataObject, setTableDataObject] = useState([]);
@@ -25,8 +28,29 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
   const [isReady, setIsReady] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false); // delete sheets
   const [sheetToDelete, setSheetToDelete] = useState(null);
+  const [activeExecution, setActiveExecution] = useState(null);
+  const [showRightbar, setShowRightbar] = useState(false);
 
 
+
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (
+      rightbarRef.current &&
+      !rightbarRef.current.contains(event.target)
+    ) {
+      setShowRightbar(false);
+    }
+  };
+
+  if (showRightbar) {
+    document.addEventListener('mousedown', handleClickOutside);
+  }
+
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside);
+  };
+}, [showRightbar]);
 
   useEffect(() => {
     const allKeys = Object.keys(localStorage);
@@ -174,6 +198,8 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
       return;
     }
 
+     setActiveExecution(type_exe);  
+
     const textarea = textareaRef.current;
     let textToExecute = textData;
 
@@ -205,6 +231,7 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
 
     if (!textToExecute) {
       alert('No valid text selected to execute.');
+        setActiveExecution(null);
       return;
     }
 
@@ -236,6 +263,8 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
       console.log('Response Data:', responseData);
       console.log('Response Data:', responseData.message);
       console.log('Response Data:', responseData.data);
+      console.log("error>>>>>>", responseData.error)
+
 
 
       if (responseData.execution_type === 'multiple' && Array.isArray(responseData.all_results)) {
@@ -243,19 +272,36 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
           message: res.message,
           row_count: res.row_count,
           affected_rows: res.affected_rows,
-
+          error: res.error,
         }));
         setConsoleMessages((prev) => [...prev, ...messages]);
-
+         if (messages.some((m) => m.error)) {
+          consoleRef.current?.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          tableRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
       } else if (responseData.execution_type === 'single') {
         const singleMessage = {
           message: responseData.message,
           row_count: responseData.row_count,
           affected_rows: responseData.affected_rows,
-
+          error: responseData.error,
         };
         setConsoleMessages((prev) => [...prev, singleMessage]);
+          if (responseData.error) {
+          consoleRef.current?.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          tableRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+
+      } else if (responseData.error) {
+        const errorMessage = {
+          error: responseData.error,
+        };
+        setConsoleMessages((prev) => [...prev, errorMessage]);
+        consoleRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
+
 
       setTableDataObject(responseData.data || []);
       console.log('consoleMessages', consoleMessages)
@@ -265,7 +311,10 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
     } catch (err) {
 
       console.error('Execution failed:', err);
-    }
+      consoleRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }finally {
+    setActiveExecution(null);
+  }
   };
 
   const handleFocusTextarea = () => {
@@ -341,8 +390,8 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
               key={sheet}
               onClick={() => setActiveSheet(sheet)}
               className={`px-3 py-1 text-[18px] border  ${sheet === activeSheet
-                  ? 'bg-purple-600 text-white'
-                  : 'border-purple-600'
+                ? 'bg-purple-600 text-white'
+                : 'border-purple-600'
                 } hover:border-b hover:border-b-cyan-50 hover:border-t-cyan-50 transition-colors duration-300`}
             >
               {sheet}
@@ -362,13 +411,14 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
 
           <button
             onClick={() => executeData('single')}
-
+            disabled={activeExecution !== null && activeExecution !== 'single'}
             className='px-3 py-1 text-[18px] cursor-pointer border border-purple-600  hover:border-b hover:border-b-cyan-50 hover:border-t-cyan-50 transition-colors duration-500'
           >
             Execute
           </button>
           <button
             onClick={() => executeData('multiple')}
+             disabled={activeExecution !== null && activeExecution !== 'multiple'}
             className='px-3 py-1 text-[18px] cursor-pointer border border-purple-600  hover:border-b hover:border-b-cyan-50 hover:border-t-cyan-50 transition-colors duration-500'
 
           >
@@ -376,6 +426,7 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
           </button>
           <button
             onClick={() => executeData('stop')}
+            disabled={activeExecution !== null && activeExecution !== 'download'}
             className='px-3 py-1 text-[18px] cursor-pointer border border-red-600  hover:border-b hover:border-b-cyan-50 hover:border-t-cyan-50 transition-colors duration-500'
 
           >
@@ -412,11 +463,7 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
 
           />
         </form>
-
-
-
-
-
+        
         <div className='fixed top-36 right-10 flex flex-col gap-4'>
           <div className='cursor-pointer '
             onClick={handleFocusTextarea}>
@@ -433,7 +480,7 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
             <img src={Table} alt="" className='w-7 h-7' />
           </div>
 
-          <div className='cursor-pointer '>
+          <div className='cursor-pointer 'onClick={() => setShowRightbar(!showRightbar)}>
             <img src={Stack} alt="" className='w-8 h-8' />
           </div>
 
@@ -448,7 +495,7 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
 
 
       </div>
-
+ 
 
       {/* <h2 className='font-bold text-slate-800 mx-5'>Console Messages</h2>
       <div className='border border-slate-300 p-3 m-5 rounded h-[25vh] px-10 overflow-scroll scroll-smooth'>
@@ -464,7 +511,14 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
 
         
       </div> */}
-      <ConsoleMessageBox consoleMessages={consoleMessages} />
+       {showRightbar && (
+
+        <div   ref={rightbarRef}
+        className="fixed top-0 right-0 h-[100vh] w-[20vw] z-50 bg-white shadow-xl rounded-l-xl">
+          <Rightbar />
+        </div>
+      )}
+      <ConsoleMessageBox consoleMessages={consoleMessages} ref={consoleRef} />
 
       {/* Delete sheet dialogue box */}
       {showDeleteDialog && (
