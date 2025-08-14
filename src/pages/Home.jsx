@@ -12,7 +12,7 @@ import {
   MantineReactTable,
 } from 'mantine-react-table';
 import { Plus } from 'lucide-react'
-import ConsoleMessageBox from '../components/ConsoleMessageBox';
+import ConsoleMessageBox from '../components/consoleMessageBox';
 import Rightbar from '../components/Rightbar';
 import { saveAs } from 'file-saver';
 import { data } from 'react-router-dom';
