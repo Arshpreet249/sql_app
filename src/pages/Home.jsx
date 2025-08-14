@@ -14,12 +14,14 @@ import {
 import { Plus } from 'lucide-react'
 import ConsoleMessageBox from '../components/ConsoleMessageBox';
 import Rightbar from '../components/Rightbar';
+import { saveAs } from 'file-saver';
+import { data } from 'react-router-dom';
 
 const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiveSheet }) => {
   const textareaRef = useRef(null);
   const tableRef = useRef(null);
-   const consoleRef = useRef(null);
-   const rightbarRef = useRef(null);
+  const consoleRef = useRef(null);
+  const rightbarRef = useRef(null);
   const [textData, setTextData] = useState('');
   const [consoleMessages, setConsoleMessages] = useState([]);
   const [tableDataObject, setTableDataObject] = useState([]);
@@ -30,28 +32,29 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
   const [sheetToDelete, setSheetToDelete] = useState(null);
   const [activeExecution, setActiveExecution] = useState(null);
   const [showRightbar, setShowRightbar] = useState(false);
+  const [summaryData, setSummaryData] = useState([]);
 
+  // Close Rightbar on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        rightbarRef.current &&
+        !rightbarRef.current.contains(event.target)
+      ) {
+        setShowRightbar(false);
+      }
+    };
 
-
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (
-      rightbarRef.current &&
-      !rightbarRef.current.contains(event.target)
-    ) {
-      setShowRightbar(false);
+    if (showRightbar) {
+      document.addEventListener('mousedown', handleClickOutside);
     }
-  };
 
-  if (showRightbar) {
-    document.addEventListener('mousedown', handleClickOutside);
-  }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showRightbar]);
 
-  return () => {
-    document.removeEventListener('mousedown', handleClickOutside);
-  };
-}, [showRightbar]);
-
+  // Load sheets from localStorage
   useEffect(() => {
     const allKeys = Object.keys(localStorage);
     const sheetKeys = allKeys.filter((key) => key.startsWith('Sheet'));
@@ -75,19 +78,7 @@ useEffect(() => {
   }, [activeSheet]);
 
 
-  // useEffect(() => {
-  //   const allKeys = Object.keys(localStorage);
-  //   const sheetKeys = allKeys.filter((key) => key.startsWith('Sheet'));
 
-  //   setSheets(sheetKeys.length > 0 ? sheetKeys : []);
-  //   setIsReady(true);
-  // }, []);
-
-
-
-
-
-  // Load saved data from localStorage when active sheet changes
   useEffect(() => {
     const stored = localStorage.getItem(activeSheet)
     setTextData(stored || '')
@@ -192,35 +183,40 @@ useEffect(() => {
     }
   };
 
-  const executeData = async (type_exe) => {
-    if (!selectedConnection || !textData.trim()) {
-      alert('Missing connection or query text');
-      return;
+  const executeData = async (type_exe, overrideText = null) => {
+    if (!selectedConnection) return;
+
+
+    let textToExecute = overrideText || textData;
+
+    if (type_exe !== "summary" && !textToExecute.trim()) {
+
+      alert('Missing query text');
+      return
     }
 
-     setActiveExecution(type_exe);  
+    if (!overrideText) {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        const text = textarea.value;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
 
-    const textarea = textareaRef.current;
-    let textToExecute = textData;
+        if (start !== end) {
+          // Case 1: If user selected text
+          textToExecute = text.substring(start, end).trim();
+        } else {
+          // Case 2: No selection, extract nearest SQL statement
+          let startIndex = text.lastIndexOf(';', start - 1);
+          startIndex = startIndex === -1 ? 0 : startIndex + 1;
 
-    if (textarea) {
-      const text = textarea.value;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
+          let endIndex = text.indexOf(';', start);
+          endIndex = endIndex === -1 ? text.length : endIndex;
 
-      if (start !== end) {
-        // Case 1: If user selected text
-        textToExecute = text.substring(start, end).trim();
-      } else {
-        // Case 2: No selection, extract nearest SQL statement
-        let startIndex = text.lastIndexOf(';', start - 1);
-        startIndex = startIndex === -1 ? 0 : startIndex + 1;
-
-        let endIndex = text.indexOf(';', start);
-        endIndex = endIndex === -1 ? text.length : endIndex;
-
-        textToExecute = text.substring(startIndex, endIndex).trim();
+          textToExecute = text.substring(startIndex, endIndex).trim();
+        }
       }
+
     }
 
 
@@ -229,18 +225,20 @@ useEffect(() => {
       .replace(/\s+/g, ' ')
       .trim();
 
-    if (!textToExecute) {
-      alert('No valid text selected to execute.');
-        setActiveExecution(null);
-      return;
-    }
+    // if (!textToExecute) {
+    //   alert('No valid text selected to execute.');
+    //   setActiveExecution(null);
+    //   return;
+    // }
+
+    setActiveExecution(type_exe);
 
     const encrytionData =
       sessionStorage.getItem(selectedConnection) ||
       localStorage.getItem(selectedConnection);
 
     const requestData = {
-      textData: textToExecute,
+      textData: type_exe === "summary" ? "" : textToExecute,
       type_exe,
       selectedConnection,
       encrytionData,
@@ -260,12 +258,16 @@ useEffect(() => {
       console.log('Success:', response.status);
       const responseData = await response.json();
 
-      console.log('Response Data:', responseData);
-      console.log('Response Data:', responseData.message);
+      console.log('Response:', responseData);
+      console.log('Response msg:', responseData.message);
       console.log('Response Data:', responseData.data);
       console.log("error>>>>>>", responseData.error)
+      console.log("schemas", responseData.schemas)
 
-
+      if (type_exe === "summary") {
+        setSummaryData(responseData.schemas || [])
+        return
+      }
 
       if (responseData.execution_type === 'multiple' && Array.isArray(responseData.all_results)) {
         const messages = responseData.all_results.map((res) => ({
@@ -275,7 +277,7 @@ useEffect(() => {
           error: res.error,
         }));
         setConsoleMessages((prev) => [...prev, ...messages]);
-         if (messages.some((m) => m.error)) {
+        if (messages.some((m) => m.error)) {
           consoleRef.current?.scrollIntoView({ behavior: 'smooth' });
         } else {
           tableRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -288,7 +290,7 @@ useEffect(() => {
           error: responseData.error,
         };
         setConsoleMessages((prev) => [...prev, singleMessage]);
-          if (responseData.error) {
+        if (responseData.error) {
           consoleRef.current?.scrollIntoView({ behavior: 'smooth' });
         } else {
           tableRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -312,10 +314,16 @@ useEffect(() => {
 
       console.error('Execution failed:', err);
       consoleRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }finally {
-    setActiveExecution(null);
-  }
+    } finally {
+      setActiveExecution(null);
+    }
   };
+
+  useEffect(() => {
+    if (selectedConnection) {
+      executeData("summary");
+    }
+  }, [selectedConnection]);
 
   const handleFocusTextarea = () => {
     if (textareaRef.current) {
@@ -336,15 +344,7 @@ useEffect(() => {
   const table = useMantineReactTable({
     columns: tableColumns.map((col) => ({
       ...col,
-      // Cell: ({ cell }) => <div className="text-center">{cell.getValue()}</div>,
-      // mantineTableHeadCellProps: {
-      //   className: 'text-center px-6 py-3',  // 🔼 More horizontal spacing
-      //   // style: { textAlign: 'center' },
-      // },
-      // mantineTableBodyCellProps: {
-      //   className: 'text-center px-6 py-2',  // 🔼 More horizontal spacing
-      //   // style: { textAlign: 'center' },
-      // },
+
     })),
 
     data: tableDataObject,
@@ -378,6 +378,39 @@ useEffect(() => {
     },
   });
 
+  const handleRightbarOptionClick = ({ dbName, option }) => {
+    const newSheetName = `Sheet ${sheets.length + 1} `;
+
+    const textAreaContent = `Select * from ${dbName}.${option};`;
+
+    localStorage.setItem(newSheetName, textAreaContent);
+
+    // Add to sheets and set active
+    setSheets([...sheets, newSheetName]);
+    setActiveSheet(newSheetName);
+    setTextData(textAreaContent);
+
+    setShowRightbar(false);
+
+    executeData('single', textAreaContent);
+
+  };
+
+
+
+  const downloadData = () => {
+    if (!tableDataObject || tableDataObject.length === 0) {
+      alert("No data to download");
+      return;
+    }
+    // Column headers
+    const keys = Object.keys(tableDataObject[0]);
+
+    // CSV content
+    const csvContent = [keys.join(","), ...tableDataObject.map(row => keys.map(k => `"${row[k]}"`).join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, `${activeSheet}.csv`);
+  };
 
 
   return (
@@ -407,7 +440,12 @@ useEffect(() => {
 
 
         <div className='mb-4 flex flex-wrap items-center gap-2'>
-
+          <button
+           
+            className='px-3 py-1 text-[18px] cursor-pointer border border-purple-600  hover:border-b hover:border-b-cyan-50 hover:border-t-cyan-50 transition-colors duration-500'
+          >
+            Limit
+          </button>
 
           <button
             onClick={() => executeData('single')}
@@ -418,7 +456,7 @@ useEffect(() => {
           </button>
           <button
             onClick={() => executeData('multiple')}
-             disabled={activeExecution !== null && activeExecution !== 'multiple'}
+            disabled={activeExecution !== null && activeExecution !== 'multiple'}
             className='px-3 py-1 text-[18px] cursor-pointer border border-purple-600  hover:border-b hover:border-b-cyan-50 hover:border-t-cyan-50 transition-colors duration-500'
 
           >
@@ -433,7 +471,7 @@ useEffect(() => {
             Stop Query
           </button>
           <button
-            onClick={() => executeData('download')}
+            onClick={downloadData}
             className='px-3 py-1 text-[18px] cursor-pointer border border-green-600  hover:border-b hover:border-b-cyan-50 hover:border-t-cyan-50 transition-colors duration-500'
 
           >
@@ -463,8 +501,8 @@ useEffect(() => {
 
           />
         </form>
-        
-        <div className='fixed top-36 right-10 flex flex-col gap-4'>
+
+        <div className='fixed top-36 right-10 flex flex-col gap-4 z-10'>
           <div className='cursor-pointer '
             onClick={handleFocusTextarea}>
             <img src={Paper} alt="" className='w-7 h-7' />
@@ -480,7 +518,17 @@ useEffect(() => {
             <img src={Table} alt="" className='w-7 h-7' />
           </div>
 
-          <div className='cursor-pointer 'onClick={() => setShowRightbar(!showRightbar)}>
+          <div
+            className='cursor-pointer '
+            onClick={() => {
+              if (selectedConnection) {
+
+                setShowRightbar(!showRightbar);
+              } else {
+                alert("Please select a connection first.");
+              }
+            }}
+          >
             <img src={Stack} alt="" className='w-8 h-8' />
           </div>
 
@@ -495,27 +543,12 @@ useEffect(() => {
 
 
       </div>
- 
 
-      {/* <h2 className='font-bold text-slate-800 mx-5'>Console Messages</h2>
-      <div className='border border-slate-300 p-3 m-5 rounded h-[25vh] px-10 overflow-scroll scroll-smooth'>
-        
-        <div>
+      {showRightbar && (
 
-          {consoleMessages.map((item, index) => (
-            <p key={index} className='text-green-600'>
-              <b className='text-slate-600'>Message:</b> {item.message}    row_count: {item.row_count}    affected_rows: {item.affected_rows}
-            </p>
-          ))}
-          </div>
-
-        
-      </div> */}
-       {showRightbar && (
-
-        <div   ref={rightbarRef}
-        className="fixed top-0 right-0 h-[100vh] w-[20vw] z-50 bg-white shadow-xl rounded-l-xl">
-          <Rightbar />
+        <div ref={rightbarRef}
+          className="fixed top-0 right-0 h-[100vh] w-[20vw] z-50 bg-white shadow-xl rounded-l-xl">
+          <Rightbar onOptionClick={handleRightbarOptionClick} summaryData={summaryData} />
         </div>
       )}
       <ConsoleMessageBox consoleMessages={consoleMessages} ref={consoleRef} />
@@ -533,9 +566,6 @@ useEffect(() => {
           </div>
         </div>
       )}
-
-
-
 
 
       {/* Mantine Table Section */}

@@ -4,8 +4,7 @@ import Home from '../pages/Home';
 const leftbar = ({ selectedConnection, setSelectedConnection }) => {
   const [sessionData, setSessionData] = useState([]);
   const [localData, setLocalData] = useState([])
-  const [showData, setShowData] = useState('')
-
+  const [showData, setShowData] = useState('') 
  
 
   const getAllSessionStorage=()=>{
@@ -23,19 +22,35 @@ const leftbar = ({ selectedConnection, setSelectedConnection }) => {
     );
     
   };
+  
+
+  // useEffect(() => {
+  // const temp_keys = getAllSessionStorage()
+  // setSessionData(temp_keys)
+  // const permanent_keys = getAlllocalStorage()
+  // setLocalData(permanent_keys)
+
+  // }, [])
 
   useEffect(() => {
-  const temp_keys = getAllSessionStorage()
-  setSessionData(temp_keys)
-  const permanent_keys = getAlllocalStorage()
-  setLocalData(permanent_keys)
+  const interval = setInterval(() => {
+    const temp_keys = getAllSessionStorage();
+    setSessionData(temp_keys);
 
-  }, [])
+    const permanent_keys = getAlllocalStorage();
+    setLocalData(permanent_keys);
+  }, 1000); 
+
+  return () => clearInterval(interval);
+}, []);
+
 
   useEffect(() => {
     console.log(showData)
     console.log(selectedConnection)
   }, [showData])
+
+  
 
 
 
@@ -59,7 +74,7 @@ const leftbar = ({ selectedConnection, setSelectedConnection }) => {
               
             ))} */}
             {Object.entries(sessionData)
-              .filter(([key, _]) => !key.startsWith("Sheet")) // ✅ Only include keys starting with "Sheet"
+              .filter(([key, _]) => !key.startsWith("Sheet")) 
               .map(([key, value], index) => (
                 <p 
                   className={`border-l-8 cursor-pointer my-2 p-2 ${
@@ -93,7 +108,7 @@ const leftbar = ({ selectedConnection, setSelectedConnection }) => {
               
             ))} */}
             {Object.entries(localData)
-              .filter(([key, _]) => !key.startsWith("Sheet")) // ✅ Only include keys starting with "Sheet"
+              .filter(([key, _]) => !key.startsWith("Sheet")) 
               .map(([key, value], index) => (
                 <p 
                   className={`border-l-8 cursor-pointer my-2 p-2 ${

@@ -13,7 +13,7 @@ const SaveInfo = ({ onclose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [server, setServer] = useState('');
   const [database, setDatabase] = useState('');
-  
+
   // SSH Tunnel fields
   const [useSSH, setUseSSH] = useState(false);
   const [sshHost, setSshHost] = useState('');
@@ -27,7 +27,7 @@ const SaveInfo = ({ onclose }) => {
   const [sshTestResult, setSshTestResult] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showSSHPassword, setShowSSHPassword] = useState(false);
-  
+
   const infoRef = useRef();
 
   useEffect(() => {
@@ -88,45 +88,45 @@ const SaveInfo = ({ onclose }) => {
 
       const publicKey = forge.pki.publicKeyFromPem(fetchedKey);
 
-             // Prepare connection data
-       const connectionData = {
-         ssh_tunnel: {
-           ssh_host: sshHost,
-           ssh_port: parseInt(sshPort),
-           ssh_username: sshUsername,
-           ssh_password: sshPassword || null,
-           ssh_key_path: sshKeyPath || null,
-           db_host: dbHost,
-           db_port: parseInt(dbPort)
-         },
-         ht: host,
-         pt: parseInt(port),
-         db: database,
-         user: userName,
-         password: password,
-         db_name: selectDb
-       };
+      // Prepare connection data
+      const connectionData = {
+        ssh_tunnel: {
+          ssh_host: sshHost,
+          ssh_port: parseInt(sshPort),
+          ssh_username: sshUsername,
+          ssh_password: sshPassword || null,
+          ssh_key_path: sshKeyPath || null,
+          db_host: dbHost,
+          db_port: parseInt(dbPort)
+        },
+        ht: host,
+        pt: parseInt(port),
+        db: database,
+        user: userName,
+        password: password,
+        db_name: selectDb
+      };
 
       const inputText = JSON.stringify(connectionData);
-      
+
       // Generate a random AES key
       const aesKey = forge.random.getBytesSync(32); // 256-bit key
       const iv = forge.random.getBytesSync(16); // 128-bit IV
-      
+
       // Create AES cipher
       const cipher = forge.cipher.createCipher('AES-CBC', aesKey);
       cipher.start({ iv: iv });
       cipher.update(forge.util.createBuffer(inputText, 'utf8'));
       cipher.finish();
-      
+
       // Get encrypted data
       const encryptedData = cipher.output.getBytes();
-      
+
       // Encrypt the AES key with RSA
       const encryptedAesKey = publicKey.encrypt(aesKey, 'RSA-OAEP', {
         md: forge.md.sha256.create(),
       });
-      
+
       // Combine IV + encrypted AES key + encrypted data
       const combinedData = iv + encryptedAesKey + encryptedData;
       const encryptedBase64 = forge.util.encode64(combinedData);
@@ -149,9 +149,9 @@ const SaveInfo = ({ onclose }) => {
       const result = await response.json();
       setSshTestResult(result);
     } catch (error) {
-      setSshTestResult({ 
-        status: 'error', 
-        message: `SSH connection test failed: ${error.message}` 
+      setSshTestResult({
+        status: 'error',
+        message: `SSH connection test failed: ${error.message}`
       });
     } finally {
       setTestSSHLoading(false);
@@ -171,57 +171,61 @@ const SaveInfo = ({ onclose }) => {
 
     const publicKey = forge.pki.publicKeyFromPem(fetchedKey);
 
-         // Prepare connection data based on whether SSH is used
-     let users;
-           if (useSSH) {
-        users = {
-          ssh_tunnel: {
-            ssh_host: sshHost,
-            ssh_port: parseInt(sshPort),
-            ssh_username: sshUsername,
-            ssh_password: sshPassword || null,
-            ssh_key_path: sshKeyPath || null,
-            db_host: dbHost,
-            db_port: parseInt(dbPort)
-          },
-          ht: host,
-          pt: parseInt(port),
-          db: database,
-          user: userName,
-          password: password,
-          db_name: selectDb
-        };
-      } else {
-        users = {
-          user: userName,
-          password: password,
-          ht: host,
-          pt: port,
-          db: database,
-          db_name: selectDb
-        };
-      }
+    // Prepare connection data based on whether SSH is used
+    let users;
+    if (useSSH) {
+      users = {
+        ssh_tunnel: {
+          ssh_host: sshHost,
+          ssh_port: parseInt(sshPort),
+          ssh_username: sshUsername,
+          ssh_password: sshPassword || null,
+          ssh_key_path: sshKeyPath || null,
+          db_host: dbHost,
+          db_port: parseInt(dbPort)
+        },
+        ht: host,
+        pt: parseInt(port),
+        sv: server,
+        db: database,
+        user: userName,
+        password: password,
+        db_name: selectDb
+      };
+    } else {
+      users = {
+        user: userName,
+        password: password,
+        ht: host,
+        pt: port,
+        sv: server,
+        db: database,
+        db_name: selectDb
+      };
+    }
+    console.log("users object is:", users);
+    
 
     const inputText = JSON.stringify(users);
-    
+
     // Generate a random AES key
     const aesKey = forge.random.getBytesSync(32); // 256-bit key
     const iv = forge.random.getBytesSync(16); // 128-bit IV
-    
+
     // Create AES cipher
     const cipher = forge.cipher.createCipher('AES-CBC', aesKey);
     cipher.start({ iv: iv });
     cipher.update(forge.util.createBuffer(inputText, 'utf8'));
     cipher.finish();
-    
+
     // Get encrypted data
     const encryptedData = cipher.output.getBytes();
-    
+
     // Encrypt the AES key with RSA
     const encryptedAesKey = publicKey.encrypt(aesKey, 'RSA-OAEP', {
       md: forge.md.sha256.create(),
     });
-    
+
     // Combine IV + encrypted AES key + encrypted data
     const combinedData = iv + encryptedAesKey + encryptedData;
     const encryptedBase64 = forge.util.encode64(combinedData);
@@ -233,18 +237,19 @@ const SaveInfo = ({ onclose }) => {
       users: encryptedBase64,
       use_ssh: useSSH,
     };
+   
 
-         if (!db.connection_name) {
-       alert('Please enter a connection name');
-       setIsLoading(false);
-       return;
-     }
+    if (!db.connection_name) {
+      alert('Please enter a connection name');
+      setIsLoading(false);
+      return;
+    }
 
-     if (!selectDb) {
-       alert('Please select a database type');
-       setIsLoading(false);
-       return;
-     }
+    if (!selectDb) {
+      alert('Please select a database type');
+      setIsLoading(false);
+      return;
+    }
 
     const alreadyExists =
       sessionStorage.getItem(db.connection_name) || localStorage.getItem(db.connection_name);
@@ -324,7 +329,7 @@ const SaveInfo = ({ onclose }) => {
           {useSSH && (
             <div className="mt-4 p-4 border border-gray-300 rounded bg-gray-50">
               <h2 className="text-lg font-semibold mb-3">SSH Tunnel Configuration</h2>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium">SSH Host</h3>
@@ -359,52 +364,52 @@ const SaveInfo = ({ onclose }) => {
                     required
                   />
                 </div>
-                                 <div>
-                   <h3 className="text-sm font-medium">SSH Password (optional)</h3>
-                   <div className="relative">
-                     <input
-                       className="border border-gray-400 outline-none p-1 w-full pr-10"
-                       type={showSSHPassword ? "text" : "password"}
-                       value={sshPassword}
-                       onChange={(e) => setSshPassword(e.target.value)}
-                       placeholder="Leave empty if using key"
-                     />
-                     <button
-                       type="button"
-                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                       onClick={() => setShowSSHPassword(!showSSHPassword)}
-                     >
-                       {showSSHPassword ? "🔭" : "👁️‍🗨️"}
-                     </button>
-                   </div>
-                 </div>
-                                                                                        <div>
-                     <h3 className="text-sm font-medium">SSH Key Path (optional)</h3>
-                     <div className="flex gap-2">
-                       <input
-                         className="border border-gray-400 outline-none p-1 flex-1"
-                         type="text"
-                         value={sshKeyPath}
-                         onChange={(e) => setSshKeyPath(e.target.value)}
-                         placeholder="Click Browse to select key file"
-                       />
-                       <button
-                         type="button"
-                         onClick={() => document.getElementById('ssh-key-file').click()}
-                         className="px-3 py-1 bg-blue-500 text-white text-sm hover:bg-blue-600"
-                       >
-                         Browse
-                       </button>
-                       <input
-                         type="file"
-                         accept=".pem,.key,.ppk"
-                         onChange={handleFileSelect}
-                         className="hidden"
-                         id="ssh-key-file"
-                       />
-                     </div>
-                   </div>
                 <div>
+                  <h3 className="text-sm font-medium">SSH Password (optional)</h3>
+                  <div className="relative">
+                    <input
+                      className="border border-gray-400 outline-none p-1 w-full pr-10"
+                      type={showSSHPassword ? "text" : "password"}
+                      value={sshPassword}
+                      onChange={(e) => setSshPassword(e.target.value)}
+                      placeholder="Leave empty if using key"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      onClick={() => setShowSSHPassword(!showSSHPassword)}
+                    >
+                      {showSSHPassword ? "🔭" : "👁️‍🗨️"}
+                    </button>
+                  </div>
+                </div>
+                {/* <div>
+                  <h3 className="text-sm font-medium">SSH Key Path (optional)</h3>
+                  <div className="flex gap-2">
+                    <input
+                      className="border border-gray-400 outline-none p-1 flex-1"
+                      type="text"
+                      value={sshKeyPath}
+                      onChange={(e) => setSshKeyPath(e.target.value)}
+                      placeholder="Click Browse to select key file"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('ssh-key-file').click()}
+                      className="px-3 py-1 bg-blue-500 text-white text-sm hover:bg-blue-600"
+                    >
+                      Browse
+                    </button>
+                    <input
+                      type="file"
+                      accept=".pem,.key,.ppk"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="ssh-key-file"
+                    />
+                  </div>
+                </div> */}
+                {/* <div>
                   <h3 className="text-sm font-medium">Database Host (via SSH)</h3>
                   <input
                     className="border border-gray-400 outline-none p-1 w-full"
@@ -414,8 +419,8 @@ const SaveInfo = ({ onclose }) => {
                     placeholder="e.g., i4invest-db-cluster.c7ewg4cusf39.ap-south-1.rds.amazonaws.com"
                     required
                   />
-                </div>
-                <div>
+                </div> */}
+                {/* <div>
                   <h3 className="text-sm font-medium">Database Port (via SSH)</h3>
                   <input
                     className="border border-gray-400 outline-none p-1 w-full"
@@ -425,7 +430,7 @@ const SaveInfo = ({ onclose }) => {
                     placeholder="3306"
                     required
                   />
-                </div>
+                </div> */}
               </div>
 
               {/* Test SSH Connection Button */}
@@ -433,21 +438,19 @@ const SaveInfo = ({ onclose }) => {
                 <button
                   disabled={testSSHLoading || !sshHost || !sshUsername}
                   onClick={testSSHConnection}
-                  className={`px-4 py-2 rounded font-semibold ${
-                    testSSHLoading || !sshHost || !sshUsername
+                  className={`px-4 py-2 rounded font-semibold ${testSSHLoading || !sshHost || !sshUsername
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
+                    }`}
                 >
                   {testSSHLoading ? 'Testing...' : 'Test SSH Connection'}
                 </button>
-                
+
                 {sshTestResult && (
-                  <div className={`mt-2 p-2 rounded text-sm ${
-                    sshTestResult.status === 'success' 
-                      ? 'bg-green-100 text-green-800 border border-green-300' 
+                  <div className={`mt-2 p-2 rounded text-sm ${sshTestResult.status === 'success'
+                      ? 'bg-green-100 text-green-800 border border-green-300'
                       : 'bg-red-100 text-red-800 border border-red-300'
-                  }`}>
+                    }`}>
                     {sshTestResult.message}
                   </div>
                 )}
@@ -457,7 +460,7 @@ const SaveInfo = ({ onclose }) => {
 
           <div className="mt-4 p-4 border border-gray-300 rounded bg-gray-50">
             <h2 className="text-lg font-semibold mb-3">Database Connection</h2>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="text-sm font-medium">Username</h3>
@@ -470,33 +473,33 @@ const SaveInfo = ({ onclose }) => {
                   required
                 />
               </div>
-                             <div>
-                 <h3 className="text-sm font-medium">Password</h3>
-                 <div className="relative">
-                   <input
-                     className="border border-gray-400 outline-none p-1 w-full pr-10"
-                     type={showPassword ? "text" : "password"}
-                     value={password}
-                     onChange={(e) => setPassword(e.target.value)}
-                     placeholder="Enter password"
-                     required
-                   />
-                   <button
-                     type="button"
-                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                     onClick={() => setShowPassword(!showPassword)}
-                   >
-                     {showPassword ? "🔭" : "👁️‍🗨️"}
-                   </button>
-                 </div>
-               </div>
+              <div>
+                <h3 className="text-sm font-medium">Password</h3>
+                <div className="relative">
+                  <input
+                    className="border border-gray-400 outline-none p-1 w-full pr-10"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? "🔭" : "👁️‍🗨️"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
           {selectDb === 'mssql' && (
             <div className="mt-4 p-4 border border-gray-300 rounded bg-gray-50">
               <h2 className="text-lg font-semibold mb-3">MSSQL Server</h2>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium">Server</h3>
@@ -527,7 +530,7 @@ const SaveInfo = ({ onclose }) => {
           {selectDb !== 'mssql' && (
             <div className="mt-4 p-4 border border-gray-300 rounded bg-gray-50">
               <h2 className="text-lg font-semibold mb-3">Database Server</h2>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium">Host</h3>
@@ -559,11 +562,10 @@ const SaveInfo = ({ onclose }) => {
             <button
               disabled={isLoading}
               onClick={() => handleAdd('temporary')}
-              className={`px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 ${
-                isLoading 
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50' 
+              className={`px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 ${isLoading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
                   : 'bg-purple-600 text-white hover:bg-purple-300 shadow-md hover:shadow-lg'
-              }`}
+                }`}
             >
               {isLoading ? (
                 <span className="flex items-center">
@@ -580,11 +582,10 @@ const SaveInfo = ({ onclose }) => {
             <button
               disabled={isLoading}
               onClick={() => handleAdd('permanent')}
-              className={`px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 ${
-                isLoading 
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50' 
+              className={`px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 ${isLoading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
                   : 'bg-purple-600 text-white hover:bg-purple-300 shadow-md hover:shadow-lg'
-              }`}
+                }`}
             >
               {isLoading ? (
                 <span className="flex items-center">

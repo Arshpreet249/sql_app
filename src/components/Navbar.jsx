@@ -1,13 +1,22 @@
-import { useState , useRef} from 'react'
+import { useState , useRef,useEffect} from 'react'
 import SaveInfo from '../service/SaveInfo'
 import { Cog } from 'lucide-react';
 import { Share2 } from 'lucide-react';
 import Users from '../service/Users'
+import Logo from '../assets/images/logo.png'
 const Navbar = ({activeSheet,setActiveSheet}  ) => {
   const [show, setShow] = useState(false)
   const [user, setUser] = useState(false)
   const fileInputRef = useRef(null);
+  const [ip, setIp] = useState("")
   
+  useEffect(() => {
+      fetch("https://api.ipify.org?format=json")
+       .then((res) => res.json())
+        .then((data) => setIp(data.ip))
+        .catch((err) => console.error(err));
+      
+    }, [])
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -71,8 +80,13 @@ const Navbar = ({activeSheet,setActiveSheet}  ) => {
   return (
     <div>
       <nav className='w-full py-2 flex justify-between items-center bg-purple-600 bg'>
-        <h1 className='mx-4 text-4xl font-bold text-amber-50'>DB Craft</h1>
-        <ul className='flex justify-end   gap-5 mr-6'>
+        <div className='mx-4 flex items-center gap-4 '>
+          <img src={Logo} alt="" className='h-8' />
+        
+        </div>
+        
+        <ul className='flex justify-end items-center gap-5 mr-6'>
+             <p className='text-white'>{ip || "Loading..."}</p>
         <button 
         onClick={handleLoadFileClick}
         className="px-3 text-amber-50 cursor-pointer text-[18px] border-b border-b-purple-600 my-1 hover:border-b hover:border-b-cyan-50 transition-colors duration-500">
@@ -90,9 +104,7 @@ const Navbar = ({activeSheet,setActiveSheet}  ) => {
         className="px-3 text-amber-50 cursor-pointer text-[18px] border-b border-b-purple-600 my-1 hover:border-b hover:border-b-cyan-50 transition-colors duration-500">
         Save file 
         </button>
-        <button className="px-3 text-amber-50 cursor-pointer text-[18px]  border-b border-b-purple-600 my-1 hover:border-b hover:border-b-cyan-50 transition-colors duration-500">
-        Statistics 
-        </button>
+       
 
           <li >
           <button onClick={()=>setShow(true)} className=' cursor-pointer p-2'> <Cog size={35} strokeWidth={1} color="#fff"  /></button>
