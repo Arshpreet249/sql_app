@@ -15,9 +15,10 @@ import { Plus } from 'lucide-react'
 import ConsoleMessageBox from '../components/consoleMessageBox';
 import Rightbar from '../components/Rightbar';
 import { saveAs } from 'file-saver';
-import { data } from 'react-router-dom';
+import Loader from '../assets/images/liquidloader.gif'
+import { Menu, Button } from '@mantine/core';
 
-const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiveSheet }) => {
+const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiveSheet ,ip}) => {
   const textareaRef = useRef(null);
   const tableRef = useRef(null);
   const consoleRef = useRef(null);
@@ -33,6 +34,7 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
   const [activeExecution, setActiveExecution] = useState(null);
   const [showRightbar, setShowRightbar] = useState(false);
   const [summaryData, setSummaryData] = useState([]);
+  const [limit, setLimit] = useState(500)
 
   // Close Rightbar on outside click
   useEffect(() => {
@@ -55,21 +57,30 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
   }, [showRightbar]);
 
   // Load sheets from localStorage
+  // useEffect(() => {
+  //   const allKeys = Object.keys(localStorage);
+  //   const sheetKeys = allKeys.filter((key) => key.startsWith('Sheet'));
+
+  //   // Only set activeSheet if it’s not already set
+  //   if (!activeSheet || !sheetKeys.includes(activeSheet)) {
+  //     const defaultSheet = sheetKeys.length > 0 ? sheetKeys[0] : 'Sheet 1';
+  //     setActiveSheet(defaultSheet);
+  //     setTextData(localStorage.getItem(defaultSheet) || '');
+  //   }
+
+  //   setSheets(sheetKeys.length > 0 ? sheetKeys : ['Sheet 1']);
+  //   setIsReady(true);
+  // }, []);
   useEffect(() => {
     const allKeys = Object.keys(localStorage);
-    const sheetKeys = allKeys.filter((key) => key.startsWith('Sheet'));
-
-    // Only set activeSheet if it’s not already set
-    if (!activeSheet || !sheetKeys.includes(activeSheet)) {
-      const defaultSheet = sheetKeys.length > 0 ? sheetKeys[0] : 'Sheet 1';
-      setActiveSheet(defaultSheet);
-      setTextData(localStorage.getItem(defaultSheet) || '');
+    const sheetKeys = allKeys
+      .filter((key) => key.startsWith('Sheet'))
+      .map((key) => key.trim());
+    setSheets(sheetKeys);
+    if (sheetKeys.length > 0) {
+      setActiveSheet(sheetKeys[0]);
     }
-
-    setSheets(sheetKeys.length > 0 ? sheetKeys : ['Sheet 1']);
-    setIsReady(true);
   }, []);
-
 
   useEffect(() => {
     const allKeys = Object.keys(localStorage);
@@ -94,8 +105,7 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
 
   // butt to add sheet 
   const addSheet = () => {
-    const newSheetName = `Sheet ${sheets.length + 1}`
-
+    const newSheetName = `Sheet ${sheets.length + 1} `.trim();
     // Save empty content
     localStorage.setItem(newSheetName, '');
 
@@ -242,6 +252,8 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
       type_exe,
       selectedConnection,
       encrytionData,
+      limit,
+      ip
     };
 
     console.log('Executing:', requestData);
@@ -379,7 +391,7 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
   });
 
   const handleRightbarOptionClick = ({ dbName, option }) => {
-    const newSheetName = `Sheet ${sheets.length + 1} `;
+    const newSheetName = `Sheet ${sheets.length + 1} `.trim();
 
     const textAreaContent = `Select * from ${dbName}.${option};`;
 
@@ -416,11 +428,11 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
   return (
     <div className=''>
 
-      <div className='py-2 mx-8 flex justify-between items-center'>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          {sheets.map((sheet) => (
+      <div className='py-2 mx-8 flex items-center'>
+        <div className="w-1/2 flex flex-wrap items-center gap-2">
+          {sheets.map((sheet,idx) => (
             <button
-              key={sheet}
+              key={`${sheet.trim()}-${idx}`}
               onClick={() => setActiveSheet(sheet)}
               className={`px-3 py-1 text-[18px] border  ${sheet === activeSheet
                 ? 'bg-purple-600 text-white'
@@ -439,19 +451,43 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
         </div>
 
 
-        <div className='mb-4 flex flex-wrap items-center gap-2'>
+        <div className='w-1/2 absolute right-6 top-[75px] flex justify-end flex-wrap items-center gap-2'>
+          {activeExecution !== null && (
           <button
-           
-            className='px-3 py-1 text-[18px] cursor-pointer border border-purple-600  hover:border-b hover:border-b-cyan-50 hover:border-t-cyan-50 transition-colors duration-500'
+            className='flex items-center '
           >
-            Limit
+            <img src={Loader} alt="" className='w-12' />
           </button>
+          )}
+          <Menu shadow="md" width={120}>
+            <Menu.Target>
+              <button
+                className="px-3 py-1 text-[18px] cursor-pointer border border-purple-600 hover:border-b hover:border-b-cyan-50 hover:border-t-cyan-50 transition-colors duration-500"
+              >
+                Limit: {limit}
+              </button>
+            </Menu.Target>
+
+            <Menu.Dropdown>
+              {[ 500, 1000,5000,"no_limit"].map((value) => (
+                <Menu.Item
+                  key={value}
+                  onClick={() => setLimit(value)}
+                >
+                  {value}
+                </Menu.Item>
+              ))}
+            </Menu.Dropdown>
+          </Menu>
+
 
           <button
             onClick={() => executeData('single')}
             disabled={activeExecution !== null && activeExecution !== 'single'}
-            className='px-3 py-1 text-[18px] cursor-pointer border border-purple-600  hover:border-b hover:border-b-cyan-50 hover:border-t-cyan-50 transition-colors duration-500'
+            className='px-3 py-1 text-[18px] cursor-pointer flex items-center justify-center border border-purple-600  hover:border-b hover:border-b-cyan-50 hover:border-t-cyan-50 transition-colors duration-500'
+
           >
+
             Execute
           </button>
           <button
