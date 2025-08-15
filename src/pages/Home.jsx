@@ -57,30 +57,21 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
   }, [showRightbar]);
 
   // Load sheets from localStorage
-  // useEffect(() => {
-  //   const allKeys = Object.keys(localStorage);
-  //   const sheetKeys = allKeys.filter((key) => key.startsWith('Sheet'));
-
-  //   // Only set activeSheet if it’s not already set
-  //   if (!activeSheet || !sheetKeys.includes(activeSheet)) {
-  //     const defaultSheet = sheetKeys.length > 0 ? sheetKeys[0] : 'Sheet 1';
-  //     setActiveSheet(defaultSheet);
-  //     setTextData(localStorage.getItem(defaultSheet) || '');
-  //   }
-
-  //   setSheets(sheetKeys.length > 0 ? sheetKeys : ['Sheet 1']);
-  //   setIsReady(true);
-  // }, []);
   useEffect(() => {
     const allKeys = Object.keys(localStorage);
-    const sheetKeys = allKeys
-      .filter((key) => key.startsWith('Sheet'))
-      .map((key) => key.trim());
-    setSheets(sheetKeys);
-    if (sheetKeys.length > 0) {
-      setActiveSheet(sheetKeys[0]);
+    const sheetKeys = allKeys.filter((key) => key.startsWith('Sheet'));
+
+    // Only set activeSheet if it’s not already set
+    if (!activeSheet || !sheetKeys.includes(activeSheet)) {
+      const defaultSheet = sheetKeys.length > 0 ? sheetKeys[0] : 'Sheet 1';
+      setActiveSheet(defaultSheet);
+      setTextData(localStorage.getItem(defaultSheet) || '');
     }
+
+    setSheets(sheetKeys.length > 0 ? sheetKeys : ['Sheet 1']);
+    setIsReady(true);
   }, []);
+
 
   useEffect(() => {
     const allKeys = Object.keys(localStorage);
