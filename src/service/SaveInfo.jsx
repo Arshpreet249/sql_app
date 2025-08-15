@@ -138,7 +138,7 @@ const SaveInfo = ({ onclose }) => {
         })
       };
 
-      const response = await fetch('http://192.168.1.200:7000/test-ssh-connection', {
+      const response = await fetch('http://100.126.69.44:7000/test-ssh-connection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
