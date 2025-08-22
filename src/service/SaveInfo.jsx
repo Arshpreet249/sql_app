@@ -45,7 +45,7 @@ const SaveInfo = ({ onclose }) => {
 
   const fetchKey = async () => {
     try {
-      const response = await fetch('http://100.126.69.44:7000/public-key');
+      const response = await fetch('http://100.92.111.80:7000/api/public-key');
       const data = await response.json();
 
       if (data.public_key) {
@@ -138,7 +138,7 @@ const SaveInfo = ({ onclose }) => {
         })
       };
 
-      const response = await fetch('http://100.126.69.44:7000/test-ssh-connection', {
+      const response = await fetch('http://100.92.111.80:7000/api/test-ssh-connection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

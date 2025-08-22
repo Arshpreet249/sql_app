@@ -250,7 +250,7 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
     console.log('Executing:', requestData);
 
     try {
-      const response = await fetch('http://100.126.69.44:7000/execute', {
+      const response = await fetch('http://100.92.111.80:7000/api/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
