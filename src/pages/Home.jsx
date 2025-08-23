@@ -250,7 +250,7 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
     console.log('Executing:', requestData);
 
     try {
-      const response = await fetch('http://100.92.111.80:7000/api/execute', {
+      const response = await fetch('http://100.92.111.80:7000/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -361,10 +361,14 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
       },
     },
 
+     enableColumnResizing: true,        
+  columnResizeMode: 'onChange', 
+
     mantineTableProps: {
       striped: true,
       highlightOnHover: true,
       className: 'table-auto w-full border-collapse',
+      
     },
 
     mantineTableContainerProps: {
@@ -597,7 +601,9 @@ const Home = ({ selectedConnection, setSelectedConnection, activeSheet, setActiv
 
       {/* Mantine Table Section */}
       <div ref={tableRef} className='mt-5 mb-10 border border-slate-100 px-6 py-4'>
-        <MantineReactTable table={table} />
+        <MantineReactTable 
+        
+        table={table} />
       </div>
     </div>
   );
